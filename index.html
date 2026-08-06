@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Bút Nâu Và Viên Pha Lê Ngữ Pháp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8D6E63;
+            --primary-dark: #5D4037;
+            --secondary: #29B6F6;
+            --secondary-dark: #0288D1;
+            --accent: #FFCA28;
+            --accent-dark: #F57F17;
+            --correct: #66BB6A;
+            --correct-dark: #388E3C;
+            --incorrect: #EF5350;
+            --incorrect-dark: #C62828;
+            --bg-color: #E1F5FE;
+            --surface: #FFFFFF;
+            --text-main: #3E2723;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Baloo 2', cursive, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            /* Sử dụng svh để xử lý triệt để lỗi thanh địa chỉ che màn hình trên mobile */
+            min-height: 100svh; 
+            background: linear-gradient(-45deg, #E1F5FE, #FFF9C4, #E8F5E9, #FCE4EC);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: clamp(5px, 2vw, 20px);
+            color: var(--text-main);
+            overflow: hidden; /* Body không cuộn, chỉ cuộn bên trong game */
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            height: 96svh; /* Tự động theo màn hình thực tế */
+            max-height: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: clamp(15px, 3vw, 30px);
+            box-shadow: 
+                0 20px 50px rgba(2, 136, 209, 0.25),
+                inset 0 0 0 8px rgba(255,255,255,0.7);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 4px solid #B3E5FC;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Tùy chỉnh thanh cuộn cho khu vực tràn nội dung */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #B3E5FC; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
+
+        .top-bar {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            border-bottom: 3px dashed #B3E5FC;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .player-info {
+            display: flex; align-items: center; gap: 8px;
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-weight: 700; color: var(--secondary-dark);
+            background: #E1F5FE; padding: 5px 15px; border-radius: 20px;
+        }
+
+        .score-box {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 800; color: var(--accent-dark);
+            display: flex; align-items: center; gap: 8px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-3d {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: clamp(10px, 2vw, 15px) clamp(15px, 3vw, 25px);
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-weight: 700;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--secondary-dark), 0 10px 15px rgba(2, 136, 209, 0.3);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-flex;
+            align-items: center; justify-content: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: 1px;
+            position: relative; overflow: hidden;
+        }
+
+        .btn-3d:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 0 var(--secondary-dark), 0 15px 20px rgba(2, 136, 209, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(6px) scale(0.98);
+            box-shadow: 0 0 0 var(--secondary-dark), 0 2px 5px rgba(2, 136, 209, 0.3);
+        }
+        
+        .btn-3d.accent {
+            background: var(--accent); color: var(--text-main);
+            box-shadow: 0 6px 0 var(--accent-dark), 0 10px 15px rgba(255, 143, 0, 0.3);
+        }
+        .btn-3d.accent:hover { box-shadow: 0 8px 0 var(--accent-dark), 0 15px 20px rgba(255, 143, 0, 0.4); }
+        .btn-3d.accent:active:not(:disabled) { box-shadow: 0 0 0 var(--accent-dark); }
+
+        .screen {
+            flex: 1; /* Cho phép giãn nở */
+            display: none;
+            flex-direction: column;
+            padding: clamp(15px, 3vw, 25px);
+            overflow-y: auto; /* Tự xuất hiện thanh cuộn nếu nội dung dài */
+            overflow-x: hidden;
+            position: relative;
+        }
+        .screen.active {
+            display: flex;
+            animation: slideFadeIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* --- INTRO SCREEN --- */
+        #screen-intro {
+            align-items: center; text-align: center;
+            /* Bỏ justify-content: center; vì gây lỗi khuất phần đỉnh khi màn hình quá nhỏ */
+        }
+        
+        .intro-wrapper {
+            margin: auto; /* Căn giữa thông minh, cho phép cuộn không bị mất chữ */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 10px 0;
+        }
+        
+        .title-3d {
+            font-size: clamp(1.6rem, 5.5vw, 3rem); /* Thu nhỏ lại một chút để không bị tràn ngang */
+            line-height: 1.3; color: var(--primary-dark);
+            text-shadow: 2px 2px 0 var(--surface), 4px 4px 0 var(--accent);
+            margin-bottom: 20px;
+            padding: 0 10px; /* Thêm lề để bóng chữ không bị cắt */
+            animation: floatBob 3s ease-in-out infinite;
+        }
+
+        @keyframes floatBob {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+
+        .story-box {
+            background: rgba(255, 255, 255, 0.9); padding: clamp(15px, 4vw, 25px);
+            border-radius: 25px; border: 4px solid var(--accent);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            max-width: 500px; width: 100%; margin-bottom: 30px;
+            font-size: clamp(1.1rem, 3.5vw, 1.3rem); line-height: 1.6; font-weight: 600;
+        }
+
+        .input-name {
+            width: 100%; max-width: 300px;
+            padding: 15px 20px; font-size: 1.3rem; font-weight: 700;
+            text-align: center; border: 4px solid var(--secondary);
+            border-radius: 20px; outline: none; margin-bottom: 20px;
+            color: var(--secondary-dark); background: var(--surface);
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.05); transition: 0.3s;
+        }
+        .input-name:focus { border-color: var(--accent); transform: scale(1.05); }
+
+        .crystal-display {
+            font-size: clamp(3rem, 10vw, 5rem);
+            text-align: center;
+            margin-bottom: 10px;
+            filter: grayscale(1); opacity: 0.5;
+            transition: all 1s ease;
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255,202,40,0.2)); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,202,40,0.8)); }
+        }
+
+        .map-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: clamp(10px, 3vw, 20px);
+            flex: 1; align-content: center;
+        }
+
+        .level-node {
+            background: var(--surface); border: 4px solid #E0E0E0;
+            border-radius: 25px; padding: clamp(15px, 3vw, 20px);
+            text-align: center; cursor: pointer; box-shadow: 0 8px 0 #E0E0E0;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            /* Staggered animation */
+            animation: fadeInUp 0.5s backwards;
+        }
+        .level-node:nth-child(1) { animation-delay: 0.1s; }
+        .level-node:nth-child(2) { animation-delay: 0.2s; }
+        .level-node:nth-child(3) { animation-delay: 0.3s; }
+        .level-node:nth-child(4) { animation-delay: 0.4s; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .level-node:hover:not(.locked) {
+            transform: translateY(-5px) scale(1.05);
+            border-color: var(--secondary); box-shadow: 0 12px 0 var(--secondary-dark);
+        }
+        .level-node:active:not(.locked) { transform: translateY(8px) scale(0.95); box-shadow: 0 0 0 transparent; }
+        .level-node.locked { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); box-shadow: 0 4px 0 #BDBDBD;}
+        
+        .level-node.completed {
+            border-color: var(--correct); box-shadow: 0 8px 0 var(--correct-dark); background: #E8F5E9;
+        }
+
+        .node-icon { font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 5px; display: block; }
+        .node-title { font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 800; color: var(--text-main); line-height: 1.2;}
+        .node-stars {
+            position: absolute; top: -10px; right: -10px;
+            background: var(--surface); border-radius: 50%;
+            width: clamp(35px, 8vw, 45px); height: clamp(35px, 8vw, 45px);
+            display: flex; justify-content: center; align-items: center;
+            font-size: clamp(1.2rem, 3vw, 1.5rem); border: 3px solid #E0E0E0;
+        }
+        .completed .node-stars { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 15px rgba(255, 202, 40, 0.8); }
+
+        .question-header {
+            background: #FFF8E1; border: 3px solid var(--accent);
+            padding: clamp(15px, 4vw, 20px); border-radius: 20px;
+            font-size: clamp(1.1rem, 4vw, 1.4rem); font-weight: 700;
+            text-align: center; margin-bottom: 20px;
+            box-shadow: 0 6px 0 rgba(255, 202, 40, 0.4); color: var(--primary-dark);
+            word-wrap: break-word;
+        }
+
+        /* Level 1: Đám mây */
+        .cloud-container { 
+            display: flex; justify-content: center; gap: clamp(10px, 3vw, 15px); flex-wrap: wrap; 
+        }
+        .cloud-btn {
+            background: var(--surface); border: 4px solid var(--secondary);
+            padding: 15px 20px; border-radius: 40px;
+            font-size: clamp(1rem, 3.5vw, 1.2rem); font-weight: 700;
+            color: var(--secondary-dark); cursor: pointer;
+            box-shadow: 0 6px 0 var(--secondary-dark); transition: 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex: 1; min-width: 140px; max-width: 250px;
+        }
+        .cloud-btn:hover { background: #E1F5FE; transform: scale(1.05) translateY(-3px); box-shadow: 0 9px 0 var(--secondary-dark); }
+        .cloud-btn:active { transform: translateY(6px) scale(0.95); box-shadow: 0 0 0 transparent; }
+
+        /* Level 2: Thẻ Bài */
+        .grid-2x2 { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+            gap: clamp(10px, 3vw, 15px); 
+        }
+        .card-btn {
+            background: var(--surface); border: 4px solid #E0E0E0;
+            padding: clamp(15px, 4vw, 20px) 10px; border-radius: 20px;
+            font-size: clamp(1rem, 3.5vw, 1.2rem); font-weight: 700; cursor: pointer;
+            text-align: center; box-shadow: 0 6px 0 #E0E0E0; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; min-height: 80px;
+        }
+        .card-btn.selected { 
+            border-color: var(--accent); background: #FFF8E1; 
+            box-shadow: 0 6px 0 var(--accent-dark); transform: translateY(-5px) scale(1.02);
+        }
+
+        /* Level 3: Rương Phân Loại */
+        .chest-container { display: flex; justify-content: space-around; gap: 15px; margin-top: 20px; flex-wrap: wrap;}
+        .chest {
+            width: clamp(120px, 30vw, 150px); height: clamp(100px, 25vw, 120px);
+            background: var(--primary); border-radius: 15px; border: 4px solid var(--primary-dark);
+            box-shadow: 0 8px 0 var(--primary-dark);
+            display: flex; justify-content: center; align-items: center;
+            font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 800; color: white;
+            cursor: pointer; position: relative; transition: 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .chest::before { content: ''; position: absolute; top: 15px; width: 100%; height: 5px; background: rgba(0,0,0,0.2); }
+        .chest:hover { transform: scale(1.08) translateY(-5px); filter: brightness(1.1); box-shadow: 0 12px 0 var(--primary-dark);}
+        .chest:active { transform: scale(0.95) translateY(8px); box-shadow: 0 0 0 transparent; }
+
+        .paragraph-box {
+            background: white; border: 4px solid #E0E0E0;
+            padding: clamp(15px, 4vw, 25px); border-radius: 25px;
+            font-size: clamp(1.1rem, 4vw, 1.5rem); 
+            line-height: 2.2; /* Tăng khoảng cách dòng để chứa ô vuông không bị đè */
+            font-weight: 700; box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+            word-wrap: break-word; text-align: left;
+        }
+        
+        .blank-box {
+            display: inline-flex; /* Chìa khóa để không rớt dòng */
+            align-items: center; justify-content: center;
+            width: clamp(35px, 8vw, 45px); height: clamp(35px, 8vw, 45px);
+            background: #F5F5F5; border: 3px dashed #BDBDBD;
+            border-radius: 12px; margin: 0 5px;
+            vertical-align: middle; cursor: pointer; transition: 0.2s;
+            color: var(--secondary-dark); font-weight: 900;
+            font-size: clamp(1.5rem, 5vw, 2rem); padding-bottom: 5px;
+        }
+        .blank-box.active {
+            border-color: var(--secondary); background: #E1F5FE; border-style: solid;
+            transform: scale(1.15); box-shadow: 0 0 15px rgba(41, 182, 246, 0.6);
+        }
+        .blank-box.filled { border-style: solid; border-color: var(--primary); background: #FFF8E1; color: var(--primary-dark); }
+
+        .punct-keyboard {
+            display: flex; justify-content: center; gap: clamp(15px, 4vw, 25px); margin-top: 25px;
+            opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.3s;
+        }
+        .punct-keyboard.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        
+        .key-btn {
+            width: clamp(60px, 15vw, 75px); height: clamp(60px, 15vw, 75px);
+            background: var(--surface); border: 4px solid var(--accent);
+            border-radius: 20px; font-size: clamp(2rem, 6vw, 2.5rem); font-weight: 900; color: var(--primary-dark);
+            cursor: pointer; box-shadow: 0 8px 0 var(--accent-dark);
+            display: flex; justify-content: center; align-items: center; padding-bottom: 5px;
+            transition: 0.1s;
+        }
+        .key-btn:active { transform: translateY(8px); box-shadow: 0 0 0 transparent; }
+        .key-btn:hover { filter: brightness(1.1); transform: translateY(-3px); box-shadow: 0 11px 0 var(--accent-dark); }
+
+        /* Hiệu ứng Đúng/Sai */
+        .is-correct { 
+            border-color: var(--correct) !important; background: #E8F5E9 !important; 
+            color: var(--correct-dark) !important; box-shadow: 0 6px 0 var(--correct-dark) !important;
+        }
+        .is-incorrect { 
+            border-color: var(--incorrect) !important; background: #FFEBEE !important; 
+            color: var(--incorrect-dark) !important; box-shadow: 0 6px 0 var(--incorrect-dark) !important; 
+            animation: errorShake 0.4s;
+        }
+        @keyframes errorShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+        .summary-card {
+            background: #FFF8E1; border: 4px solid var(--accent); border-radius: 25px;
+            padding: clamp(15px, 4vw, 20px); margin-bottom: 20px; text-align: left;
+        }
+        .summary-card h3 { color: var(--primary-dark); margin-bottom: 10px; font-size: clamp(1.2rem, 4vw, 1.4rem); text-align: center; }
+        .summary-card ul { font-size: clamp(1rem, 3.5vw, 1.2rem); font-weight: 600; padding-left: 20px; line-height: 1.6; }
+        
+        .leaderboard {
+            background: white; border-radius: 20px; border: 3px solid #E0E0E0; overflow: hidden;
+        }
+        .lb-row { display: flex; justify-content: space-between; padding: 12px 20px; font-weight: 700; font-size: clamp(1rem, 3vw, 1.2rem); border-bottom: 1px solid #EEEEEE;}
+        .lb-row:nth-child(1) { background: #FFF9C4; color: #F57F17; font-size: clamp(1.1rem, 3.5vw, 1.3rem);}
+        .lb-row:nth-child(2) { background: #F5F5F5; color: #757575; }
+        .lb-row.current-player { background: #E1F5FE; border-left: 5px solid var(--secondary); color: var(--secondary-dark); animation: pulseRow 1.5s infinite;}
+        
+        @keyframes pulseRow { 0%{background:#E1F5FE;} 50%{background:#B3E5FC;} 100%{background:#E1F5FE;} }
+
+        /* Hạt phép thuật (Particles) */
+        .particle {
+            position: fixed; width: 12px; height: 12px; border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            animation: popParticle 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes popParticle {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        .floating-score {
+            position: fixed; font-size: 1.5rem; font-weight: 900; color: var(--accent-dark);
+            text-shadow: 2px 2px 0 #FFF; pointer-events: none; z-index: 9999;
+            animation: floatScore 1s ease-out forwards;
+        }
+        @keyframes floatScore {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-40px) scale(1.5); opacity: 0; }
+        }
+
+        /* Modal Tùy Chỉnh (An toàn tuyệt đối) */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(62, 39, 35, 0.8); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+            padding: 20px;
+        }
+        .modal-box {
+            background: var(--surface); border: 5px solid var(--accent); border-radius: 30px;
+            padding: clamp(20px, 5vw, 30px); max-width: 400px; width: 100%; text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            animation: popInModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popInModal { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .modal-icon { font-size: clamp(3rem, 10vw, 4.5rem); margin-bottom: 15px; line-height: 1; animation: floatBob 2s infinite; }
+        .modal-text { font-size: clamp(1.2rem, 4vw, 1.4rem); font-weight: 700; margin-bottom: 25px; line-height: 1.4; word-wrap: break-word;}
+        
+        /* Hiệu ứng Pháo hoa kết thúc */
+        .confetti { position: absolute; width: 10px; height: 10px; z-index: 90; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="top-bar" id="top-bar" style="display: none;">
+        <div class="player-info">👤 <span id="display-name">Người chơi</span></div>
+        <div class="score-box" id="score-box">💎 <span id="display-score">0</span></div>
+    </div>
+
+    <!-- MÀN HÌNH INTRO -->
+    <div id="screen-intro" class="screen active">
+        <div class="intro-wrapper">
+            <div class="title-3d">BÚT NÂU &<br>VIÊN PHA LÊ NGỮ PHÁP</div>
+            <div class="story-box">
+                Vương quốc Ngữ Pháp đang mất dần ánh sáng do các Dấu Câu bị thất lạc. <br><br>
+                Em hãy giúp Hiệp sĩ Bút Nâu vượt qua 4 thử thách để tìm lại các Dấu Câu và khôi phục Viên Pha Lê nhé!
+            </div>
+            <input type="text" id="input-player-name" class="input-name" placeholder="Nhập tên của em..." maxlength="15" autocomplete="off">
+            <button class="btn-3d accent" onclick="startGame(event)">Bắt đầu phiêu lưu 🚀</button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH BẢN ĐỒ -->
+    <div id="screen-map" class="screen">
+        <div class="crystal-display" id="main-crystal">💠</div>
+        <h2 style="text-align: center; font-size: clamp(1.4rem, 5vw, 1.8rem); color: var(--primary-dark); margin-bottom: 20px;">Bản Đồ Thử Thách</h2>
+        <div class="map-container">
+            <div class="level-node" id="node-1" onclick="playLevel(1, event)">
+                <div class="node-stars" id="star-1">⭐</div>
+                <span class="node-icon">☁️</span>
+                <div class="node-title">Đám Mây Phân Loại</div>
+            </div>
+            <div class="level-node locked" id="node-2" onclick="playLevel(2, event)">
+                <div class="node-stars" id="star-2">⭐</div>
+                <span class="node-icon">🎴</span>
+                <div class="node-title">Thẻ Bài Đặc Điểm</div>
+            </div>
+            <div class="level-node locked" id="node-3" onclick="playLevel(3, event)">
+                <div class="node-stars" id="star-3">⭐</div>
+                <span class="node-icon">🧰</span>
+                <div class="node-title">Rương Bí Ẩn</div>
+            </div>
+            <div class="level-node locked" id="node-4" onclick="playLevel(4, event)">
+                <div class="node-stars" id="star-4">⭐</div>
+                <span class="node-icon">✍️</span>
+                <div class="node-title">Mảnh Ghép Dấu Câu</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-lv1" class="screen">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
+            <button class="btn-3d" style="padding: 8px 15px; font-size: 1rem;" onclick="showMap(event)">🔙 Bản đồ</button>
+            <div style="font-weight: 800; color: var(--secondary-dark); background:#E1F5FE; padding:5px 15px; border-radius:20px;">Câu <span id="lv1-progress">1/5</span></div>
+        </div>
+        <div class="question-header" id="lv1-question">Đang tải câu hỏi...</div>
+        <div style="text-align: center; margin-bottom: 20px; font-weight: 700; color: #757575;">Em hãy xếp câu trên vào đám mây thích hợp:</div>
+        <div class="cloud-container">
+            <button class="cloud-btn" onclick="checkLv1(0, event)">☁️ Giới thiệu</button>
+            <button class="cloud-btn" onclick="checkLv1(1, event)">☁️ Đặc điểm</button>
+            <button class="cloud-btn" onclick="checkLv1(2, event)">☁️ Hoạt động</button>
+        </div>
+    </div>
+
+    <!-- Cấu trúc Level 2 - Chọn thẻ đặc điểm -->
+    <div id="screen-lv2" class="screen">
+        <button class="btn-3d" style="padding: 8px 15px; font-size: 1rem; align-self: flex-start; margin-bottom: 15px;" onclick="showMap(event)">🔙 Bản đồ</button>
+        <div class="question-header">Theo em, đâu là những đặc điểm của <b>Câu kể</b>?<br><span style="font-size:1.1rem; color:var(--incorrect);">(Chọn 2 ý đúng)</span></div>
+        <div class="grid-2x2">
+            <button class="card-btn" onclick="toggleCard(this)">Dùng để kể, tả, giới thiệu</button>
+            <button class="card-btn" onclick="toggleCard(this)">Dùng để hỏi</button>
+            <button class="card-btn" onclick="toggleCard(this)">Kết thúc bằng dấu chấm</button>
+            <button class="card-btn" onclick="toggleCard(this)">Kết thúc bằng dấu chấm than</button>
+        </div>
+        <button class="btn-3d accent" style="margin-top: 30px; align-self: center;" onclick="checkLv2(event)">Kiểm tra phép thuật ✨</button>
+    </div>
+
+    <!-- Cấu trúc Level 3 - Rương Kể/Hỏi -->
+    <div id="screen-lv3" class="screen">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
+            <button class="btn-3d" style="padding: 8px 15px; font-size: 1rem;" onclick="showMap(event)">🔙 Bản đồ</button>
+            <div style="font-weight: 800; color: var(--secondary-dark); background:#E1F5FE; padding:5px 15px; border-radius:20px;">Câu <span id="lv3-progress">1/4</span></div>
+        </div>
+        <div class="question-header" id="lv3-question">Đang tải câu hỏi...</div>
+        <div style="text-align: center; font-weight: 700; color: #757575;">Câu này thuộc rương nào? Nhấp để cất vào nhé!</div>
+        <div class="chest-container">
+            <div class="chest" onclick="checkLv3(0, event)">📦 Câu kể</div>
+            <div class="chest" style="background:#0288D1; border-color:#01579B; box-shadow: 0 8px 0 #01579B;" onclick="checkLv3(1, event)">📦 Câu hỏi</div>
+        </div>
+    </div>
+
+    <div id="screen-lv4" class="screen">
+        <button class="btn-3d" style="padding: 8px 15px; font-size: 1rem; align-self: flex-start; margin-bottom: 15px;" onclick="showMap(event)">🔙 Bản đồ</button>
+        <div style="text-align: center; font-weight: 700; color: #757575; margin-bottom: 15px;">Chạm vào ô trống và chọn dấu câu thích hợp.</div>
+        
+        <div class="paragraph-box">
+            Minh là thành viên mới của lớp 3A <span class="blank-box" id="b4-0" onclick="openKey(0, event)"></span>
+            Minh vừa chuyển từ trường khác đến <span class="blank-box" id="b4-1" onclick="openKey(1, event)"></span><br>
+            Bạn ấy vui vẻ giới thiệu:<br>
+            – Tớ tên là Tuệ Minh <span class="blank-box" id="b4-2" onclick="openKey(2, event)"></span>
+            Tớ thích chơi cờ vua và múa ba lê <span class="blank-box" id="b4-3" onclick="openKey(3, event)"></span>
+        </div>
+
+        <div class="punct-keyboard" id="keyboard">
+            <button class="key-btn" onclick="fillPunct('.', event)">.</button>
+            <button class="key-btn" onclick="fillPunct('?', event)">?</button>
+            <button class="key-btn" onclick="fillPunct('!', event)">!</button>
+        </div>
+        
+        <button class="btn-3d accent" id="btn-submit-lv4" style="margin-top: 25px; align-self: center; display: none;" onclick="checkLv4(event)">Phục hồi Pha Lê 💎</button>
+    </div>
+
+    <!-- MÀN HÌNH TỔNG KẾT -->
+    <div id="screen-outro" class="screen">
+        <h2 style="font-size: clamp(1.8rem, 6vw, 2.5rem); color: var(--accent-dark); text-align: center; margin-bottom: 10px; text-shadow: 2px 2px 0 #FFF;">VIÊN PHA LÊ ĐÃ SÁNG! 🌟</h2>
+        <div class="crystal-display" style="filter:none; opacity:1;">💎</div>
+        
+        <div class="summary-card">
+            <h3>📝 Hành trang em mang về:</h3>
+            <ul>
+                <li><b>Câu kể</b> dùng để kể sự việc, miêu tả hoặc giới thiệu.</li>
+                <li>Câu kể luôn kết thúc bằng <b>dấu chấm (.)</b>.</li>
+                <li>Câu hỏi dùng để hỏi điều chưa biết, kết thúc bằng dấu chấm hỏi (?).</li>
+            </ul>
+        </div>
+
+        <h3 style="color: var(--primary-dark); margin-bottom: 10px; text-align:center;">🏆 Bảng Phong Thần</h3>
+        <div class="leaderboard" id="lb-container">
+            <!-- Render bằng JS -->
+        </div>
+
+        <button class="btn-3d" style="margin-top: 25px; align-self: center;" onclick="location.reload()">Chơi lại từ đầu 🔄</button>
+    </div>
+
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon" id="modal-icon">✨</div>
+            <div class="modal-text" id="modal-text">Nội dung</div>
+            <button class="btn-3d accent" id="modal-btn">Tuyệt vời!</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSfx(type) {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } else if (type === 'correct') { // Chuông ngân
+            osc.type = 'sine'; [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => osc.frequency.setValueAtTime(f, now + i*0.1));
+            gain.gain.setValueAtTime(0.15, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now); osc.stop(now + 0.5);
+        } else if (type === 'wrong') { // Boing nhẹ nhàng
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(250, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        } else if (type === 'win') { // Fanfare
+            osc.type = 'square'; [440, 554, 659, 880, 1108].forEach((f, i) => osc.frequency.setValueAtTime(f, now + i*0.15));
+            gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now + 1.2);
+            osc.start(now); osc.stop(now + 1.2);
+        }
+    }
+
+    function spawnParticles(x, y) {
+        const colors = ['#FFCA28', '#29B6F6', '#66BB6A', '#EF5350'];
+        for(let i = 0; i < 10; i++) {
+            let p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = x + 'px'; p.style.top = y + 'px';
+            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            p.style.setProperty('--tx', (Math.random() - 0.5) * 150 + 'px');
+            p.style.setProperty('--ty', (Math.random() - 0.5) * 150 + 'px');
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 800);
+        }
+    }
+
+    function showFloatingScore(x, y, pts) {
+        let el = document.createElement('div');
+        el.className = 'floating-score';
+        el.innerText = `+${pts}`;
+        el.style.left = x + 'px'; el.style.top = y + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    }
+
+    function showModal(text, icon = '✨', btnText = 'Tiếp tục', callback = null) {
+        const modal = document.getElementById('custom-modal');
+        document.getElementById('modal-text').innerHTML = text;
+        document.getElementById('modal-icon').innerHTML = icon;
+        const btn = document.getElementById('modal-btn');
+        btn.innerHTML = btnText;
+        modal.style.display = 'flex';
+        
+        btn.onclick = () => {
+            playSfx('click');
+            modal.style.display = 'none';
+            if(callback) callback();
+        };
+    }
+
+    /* Khởi tạo State */
+    let gameState = {
+        playerName: "", score: 0, unlocked: 1,
+        levelsDone: [false, false, false, false, false]
+    };
+
+    let mockLeaderboard = [
+        { name: "Tuệ Minh", score: 950 },
+        { name: "Bút Vàng", score: 850 },
+        { name: "Cục Tẩy", score: 400 }
+    ];
+
+    function addScore(pts, event) {
+        gameState.score += pts;
+        document.getElementById('display-score').innerText = gameState.score;
+        const box = document.getElementById('score-box');
+        box.style.transform = 'scale(1.3)'; 
+        setTimeout(() => { box.style.transform = 'scale(1)'; }, 300);
+
+        if (event && event.clientX) {
+            spawnParticles(event.clientX, event.clientY);
+            showFloatingScore(event.clientX, event.clientY - 30, pts);
+        }
+    }
+
+    function switchScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        // Scroll to top of game container just in case
+        document.getElementById(id).scrollTop = 0;
+    }
+
+    function startGame(e) {
+        playSfx('click');
+        const name = document.getElementById('input-player-name').value.trim();
+        if (!name) {
+            showModal("Em chưa nhập tên kìa! Bút Nâu biết gọi em là gì đây?", "🤔", "Nhập lại");
+            return;
+        }
+        gameState.playerName = name;
+        document.getElementById('display-name').innerText = name;
+        document.getElementById('top-bar').style.display = 'flex';
+        showMap(e);
+    }
+
+    function showMap(e) {
+        if(e) playSfx('click');
+        switchScreen('screen-map');
+        
+        let crystal = document.getElementById('main-crystal');
+        let opacity = 0.5 + (gameState.unlocked * 0.1);
+        crystal.style.opacity = opacity;
+        crystal.style.filter = `grayscale(${100 - (gameState.unlocked * 20)}%)`;
+
+        for(let i=1; i<=4; i++) {
+            const node = document.getElementById(`node-${i}`);
+            const star = document.getElementById(`star-${i}`);
+            if (gameState.unlocked >= i) node.classList.remove('locked');
+            if (gameState.levelsDone[i]) {
+                node.classList.add('completed');
+                star.style.background = 'var(--accent)';
+                star.style.color = 'white';
+            }
+        }
+
+        if (gameState.levelsDone[1] && gameState.levelsDone[2] && gameState.levelsDone[3] && gameState.levelsDone[4]) {
+            setTimeout(showOutro, 800);
+        }
+    }
+
+    function playLevel(lv, e) {
+        if (gameState.unlocked < lv) { playSfx('wrong'); return; }
+        if (gameState.levelsDone[lv]) { playSfx('click'); return; }
+        
+        playSfx('click');
+        switchScreen(`screen-lv${lv}`);
+        if(lv === 1) initLv1();
+        if(lv === 2) initLv2();
+        if(lv === 3) initLv3();
+        if(lv === 4) initLv4();
+    }
+
+    /* --- LEVEL 1 --- */
+    const dataLv1 = [
+        { q: "Tớ là bút nâu.", ans: 0 },
+        { q: "Tớ cao nhất hộp bút vì hiếm khi được gọt.", ans: 1 },
+        { q: "Đây là bút đỏ, bạn của tớ.", ans: 0 },
+        { q: "Bút đỏ thì thấp một mẩu vì được gọt quá nhiều.", ans: 1 },
+        { q: "Tớ dùng keo gắn bút đỏ vào bên cạnh tớ để bạn nhìn được ra ngoài hộp bút.", ans: 2 }
+    ];
+    let curLv1 = 0; let lockLv1 = false;
+
+    function initLv1() { curLv1 = 0; lockLv1 = false; loadLv1(); }
+    function loadLv1() {
+        document.getElementById('lv1-progress').innerText = `${curLv1 + 1}/${dataLv1.length}`;
+        document.getElementById('lv1-question').innerText = dataLv1[curLv1].q;
+        lockLv1 = false;
+        document.querySelectorAll('.cloud-btn').forEach(btn => btn.className = 'cloud-btn');
+    }
+
+    function checkLv1(selected, e) {
+        if(lockLv1) return;
+        lockLv1 = true;
+        const correct = dataLv1[curLv1].ans;
+        const btns = document.querySelectorAll('.cloud-btn');
+        
+        if (selected === correct) {
+            playSfx('correct'); btns[selected].classList.add('is-correct'); addScore(50, e);
+            let msg = correct === 0 ? "Câu giới thiệu (Ai là gì?)" : (correct === 1 ? "Câu nêu đặc điểm (Ai thế nào?)" : "Câu nêu hoạt động (Ai làm gì?)");
+            setTimeout(() => {
+                showModal(`Tuyệt vời! Đây là <b>${msg}</b>.`, "🌟", "Tiếp theo", () => {
+                    curLv1++; if(curLv1 < dataLv1.length) loadLv1(); else completeLevel(1);
+                });
+            }, 500);
+        } else {
+            playSfx('wrong'); btns[selected].classList.add('is-incorrect');
+            setTimeout(() => { showModal("Chưa chính xác rồi. Em hãy đọc kĩ lại câu nhé!", "👀", "Thử lại", () => { loadLv1(); }); }, 600);
+        }
+    }
+
+    /* --- LEVEL 2 --- */
+    const correctLv2 = [0, 2];
+    function initLv2() {
+        document.querySelectorAll('.card-btn').forEach(btn => { btn.className = 'card-btn'; });
+    }
+    function toggleCard(btn) { playSfx('click'); btn.classList.toggle('selected'); }
+
+    function checkLv2(e) {
+        const btns = document.querySelectorAll('.card-btn');
+        let selCount = 0; let isAllCorrect = true;
+
+        btns.forEach((btn, idx) => {
+            const isSel = btn.classList.contains('selected');
+            if (isSel) selCount++;
+            if (isSel && correctLv2.includes(idx)) btn.classList.add('is-correct');
+            else if (isSel && !correctLv2.includes(idx)) { btn.classList.add('is-incorrect'); isAllCorrect = false; }
+            else if (!isSel && correctLv2.includes(idx)) isAllCorrect = false;
+        });
+
+        if (selCount !== 2) {
+            playSfx('wrong'); showModal("Em cần chọn đúng <b>2 thẻ</b> nhé!", "⚖️", "Thử lại", initLv2); return;
+        }
+
+        if (isAllCorrect) {
+            playSfx('correct'); addScore(100, e);
+            setTimeout(() => { showModal("Quá giỏi! Câu kể dùng để kể/tả/giới thiệu và kết thúc bằng dấu chấm.", "🏆", "Tiếp tục", () => completeLevel(2)); }, 500);
+        } else {
+            playSfx('wrong');
+            setTimeout(() => { showModal("Có ý chưa đúng rồi. Câu kể kết thúc bằng dấu chấm chứ không phải dấu chấm than đâu nhé!", "💡", "Thử lại", initLv2); }, 600);
+        }
+    }
+
+    /* --- LEVEL 3 --- */
+    const dataLv3 = [
+        { q: "a. Bút nâu trông như thế nào?", ans: 1 },
+        { q: "b. Bút nâu là một người bạn tốt.", ans: 0 },
+        { q: "c. Bút nâu nhảy với bút vàng, lắng nghe ước mơ của bút tím.", ans: 0 },
+        { q: "d. Bút nâu gắn bút đỏ vào bên cạnh mình để làm gì?", ans: 1 }
+    ];
+    let curLv3 = 0; let lockLv3 = false;
+
+    function initLv3() { curLv3 = 0; loadLv3(); }
+    function loadLv3() {
+        document.getElementById('lv3-progress').innerText = `${curLv3 + 1}/${dataLv3.length}`;
+        document.getElementById('lv3-question').innerText = dataLv3[curLv3].q;
+        lockLv3 = false;
+    }
+
+    function checkLv3(selected, e) {
+        if(lockLv3) return;
+        lockLv3 = true;
+        const correct = dataLv3[curLv3].ans;
+        const chest = document.querySelectorAll('.chest')[selected];
+        
+        if (selected === correct) {
+            playSfx('correct'); addScore(50, e);
+            chest.style.transform = 'scale(1.1) translateY(-10px)';
+            setTimeout(() => {
+                chest.style.transform = ''; curLv3++;
+                if(curLv3 < dataLv3.length) loadLv3(); else completeLevel(3);
+            }, 800);
+        } else {
+            playSfx('wrong'); chest.style.animation = 'errorShake 0.4s';
+            setTimeout(() => {
+                chest.style.animation = '';
+                showModal("Không phải rương này rồi! Từ để hỏi thường nằm ở đâu nhỉ?", "🧐", "Thử lại", () => { lockLv3 = false; });
+            }, 500);
+        }
+    }
+
+    /* --- LEVEL 4 --- */
+    const ansLv4 = ['.', '.', '.', '.'];
+    let activeBlank = null;
+
+    function initLv4() {
+        activeBlank = null;
+        document.getElementById('keyboard').classList.remove('visible');
+        document.getElementById('btn-submit-lv4').style.display = 'none';
+        for(let i=0; i<4; i++) {
+            let b = document.getElementById(`b4-${i}`);
+            b.innerText = ''; b.className = 'blank-box';
+        }
+    }
+
+    function openKey(idx, e) {
+        playSfx('click');
+        for(let i=0; i<4; i++) document.getElementById(`b4-${i}`).classList.remove('active');
+        activeBlank = idx;
+        document.getElementById(`b4-${idx}`).classList.add('active');
+        document.getElementById('keyboard').classList.add('visible');
+        
+        // Cuộn nhẹ xuống nếu bàn phím bị che (cho điện thoại nhỏ)
+        setTimeout(()=> { document.getElementById('screen-lv4').scrollTop += 150; }, 100);
+    }
+
+    function fillPunct(char, e) {
+        if (activeBlank !== null) {
+            playSfx('click');
+            let b = document.getElementById(`b4-${activeBlank}`);
+            b.innerText = char;
+            b.classList.remove('active'); b.classList.add('filled');
+            document.getElementById('keyboard').classList.remove('visible');
+            activeBlank = null;
+
+            let count = 0;
+            for(let i=0; i<4; i++) if(document.getElementById(`b4-${i}`).innerText !== '') count++;
+            if(count === 4) document.getElementById('btn-submit-lv4').style.display = 'inline-flex';
+        }
+    }
+
+    function checkLv4(e) {
+        let isAllCorrect = true;
+        for(let i=0; i<4; i++) {
+            let b = document.getElementById(`b4-${i}`);
+            b.classList.remove('is-correct', 'is-incorrect');
+            if(b.innerText === ansLv4[i]) b.classList.add('is-correct');
+            else { b.classList.add('is-incorrect'); isAllCorrect = false; }
+        }
+
+        if (isAllCorrect) {
+            playSfx('correct'); addScore(150, e);
+            setTimeout(() => { showModal("Xuất sắc! Cả 4 câu trên đều là Câu Kể nên ta dùng dấu chấm.", "💎", "Hoàn thành", () => completeLevel(4)); }, 500);
+        } else {
+            playSfx('wrong');
+            document.getElementById('btn-submit-lv4').style.display = 'none';
+            setTimeout(() => { showModal("Có ô bị sai (màu đỏ). Em hãy chạm vào ô đó để sửa lại nhé!", "🛠️", "Sửa lỗi"); }, 600);
+        }
+    }
+
+    function completeLevel(lv) {
+        gameState.levelsDone[lv] = true;
+        if(lv < 4 && gameState.unlocked === lv) gameState.unlocked = lv + 1;
+        showModal(`Em đã vượt qua Thử thách ${lv}!`, "🎉", "Về Bản đồ", () => showMap(null));
+    }
+
+    function showOutro() {
+        playSfx('win');
+        switchScreen('screen-outro');
+        createConfetti();
+        
+        mockLeaderboard.push({ name: gameState.playerName, score: gameState.score, isCurrent: true });
+        mockLeaderboard.sort((a, b) => b.score - a.score);
+
+        const lbContainer = document.getElementById('lb-container');
+        lbContainer.innerHTML = '';
+        const medals = ['🥇', '🥈', '🥉', '🎖️'];
+        
+        mockLeaderboard.forEach((player, index) => {
+            if(index > 3) return;
+            let row = document.createElement('div');
+            row.className = `lb-row ${player.isCurrent ? 'current-player' : ''}`;
+            row.innerHTML = `<span>${medals[index] || medals[3]} ${player.name}</span> <span>${player.score} đ</span>`;
+            lbContainer.appendChild(row);
+        });
+    }
+
+    function createConfetti() {
+        const colors = ['#EF5350', '#29B6F6', '#66BB6A', '#FFCA28', '#AB47BC'];
+        for (let i = 0; i < 70; i++) {
+            let c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + 'vw';
+            c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            c.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            c.style.animationDelay = Math.random() * 1 + 's';
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 5000);
+        }
+    }
+</script>
+
+</body>
+</html>
